@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>External Site Demo</title>
+    <style>
+      body {
+        font-family: Georgia, "Times New Roman", serif;
+        margin: 0;
+        min-height: 100vh;
+        background: #fafafa;
+        color: #18181b;
+      }
+
+      main {
+        padding: 48px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Hello World</h1>
+      <p>This page simulates a third-party website embedding Rahul AI.</p>
+    </main>
+
+    <script
+      src="http://localhost:3000/embed.js?v=5"
+      data-widget-origin="http://localhost:3000"
+      data-api-url="http://127.0.0.1:8000"
+      async
+    ></script>
+  </body>
+</html>

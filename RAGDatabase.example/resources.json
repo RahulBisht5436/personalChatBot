@@ -1,0 +1,25 @@
+{
+  "downloads": [
+    {
+      "id": "resume",
+      "label": "Resume",
+      "file_name": "resume.pdf",
+      "keywords": ["resume", "cv", "curriculum vitae"]
+    }
+  ],
+  "projects": [
+    {
+      "name": "Example Project",
+      "url": "https://example.com",
+      "description": "Short project description.",
+      "keywords": ["project", "portfolio"]
+    }
+  ],
+  "profiles": [
+    {
+      "name": "LinkedIn",
+      "url": "https://www.linkedin.com/in/your-profile",
+      "keywords": ["linkedin", "profile"]
+    }
+  ]
+}
