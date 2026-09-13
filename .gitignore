@@ -49,8 +49,10 @@ desktop.ini
 **/database/sessions/*.auth.json
 **/database/chatbotMemory.txt
 
-# Personal documents stored in backend by mistake
-**/database/RAGDatabase/
+# RAG data — folder structure tracked, local content ignored
+RAGDatabase/**
+!RAGDatabase/**/
+!RAGDatabase/**/.gitkeep
 
 # Vector store and ingest manifest (regenerated locally)
 **/chroma/

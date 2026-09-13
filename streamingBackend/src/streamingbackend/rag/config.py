@@ -9,7 +9,7 @@ TOP_K = 4
 
 
 def get_repo_root() -> Path:
-    return Path(__file__).resolve().parents[5]
+    return Path(__file__).resolve().parents[4]
 
 
 def get_rag_database_path() -> Path:

@@ -79,7 +79,7 @@ flowchart LR
 ## Project Structure
 
 ```
-Streaming/
+personalChatBot/
 ├── streamingBackend/          # Python backend (FastAPI + LangGraph)
 │   └── src/streamingbackend/
 │       ├── routes/            # HTTP endpoints
@@ -93,23 +93,17 @@ Streaming/
 │       ├── components/        # ChatWidget UI
 │       └── public/embed.js    # Third-party embed script
 │
-├── RAGDatabase.example/       # Sample resources.json template
-├── Documentation/             # Flow notes
-├── .env.example               # Copy → ../.env (repo root when cloned standalone)
-└── .gitignore                 # Excludes PII, secrets, PDFs, sessions
-```
-
-When running locally inside the full `langGraph` monorepo, career documents live at:
-
-```
-langGraph/
-├── .env                       # Secrets (never commit)
-├── RAGDatabase/
-│   ├── documents/             # Your PDFs, certs, resume
+├── RAGDatabase/               # Your local career docs (create this)
+│   ├── documents/             # PDFs, certs, resume
 │   ├── chroma/                # Vector DB (auto-created)
 │   ├── manifest.json          # Ingest tracking (auto-created)
 │   └── resources.json         # Download & project links
-└── Streaming/                 # This repo
+│
+├── RAGDatabase.example/       # Sample resources.json template
+├── Documentation/             # Flow notes
+├── .env                       # Secrets (copy from .env.example)
+├── .env.example
+└── .gitignore                 # Excludes PII, secrets, PDFs, sessions
 ```
 
 ---
@@ -139,19 +133,17 @@ cd personalChatBot
 Copy the environment template and fill in your values:
 
 ```powershell
-copy .env.example ..\.env
-# Edit ..\.env — at minimum set OPENAI_API_KEY
+copy .env.example .env
+# Edit .env — at minimum set OPENAI_API_KEY
 ```
-
-> **Tip:** If you cloned only `personalChatBot`, place `.env` one level up or set paths via `RAG_DATABASE_PATH`. The default expects `RAGDatabase/` as a sibling folder.
 
 ### 2. Prepare career documents (local only)
 
 ```powershell
-mkdir ..\RAGDatabase\documents
-# Copy your resume, certificates, and .txt files into documents/
-copy RAGDatabase.example\resources.json ..\RAGDatabase\resources.json
-# Edit resources.json with your resume filename and project URLs
+mkdir RAGDatabase\documents
+# Copy your resume, certificates, and .txt files into RAGDatabase\documents\
+copy RAGDatabase.example\resources.json RAGDatabase\resources.json
+# Edit RAGDatabase\resources.json with your resume filename and project URLs
 ```
 
 ### 3. Install & ingest vectors
@@ -185,7 +177,7 @@ Open **http://localhost:3000** — floating chat widget appears bottom-right.
 
 ## Environment Variables
 
-Create `.env` at the repo root (parent of `Streaming/` when using the monorepo layout).
+Create `.env` at the repo root (`personalChatBot/.env`).
 
 | Variable | Required | Description |
 |----------|----------|-------------|
@@ -199,7 +191,7 @@ Create `.env` at the repo root (parent of `Streaming/` when using the monorepo l
 | `SMTP_FROM` | For OTP | Sender address |
 | `FREE_CHAT_LIMIT` | No | Free messages before verification (default `5`) |
 | `OTP_EXPIRY_MINUTES` | No | OTP validity (default `10`) |
-| `RAG_DATABASE_PATH` | No | Custom path to RAGDatabase folder |
+| `RAG_DATABASE_PATH` | No | Custom path to RAG folder (default: `RAGDatabase/` in this repo) |
 | `API_BASE_URL` | No | Public backend URL for download links in chat |
 
 **Frontend** (optional `.env.local` in `chatbot_frontend/`):

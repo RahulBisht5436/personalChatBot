@@ -19,7 +19,7 @@ uv run uvicorn streamingbackend.main:app --reload
 
 ## RAG (career knowledge)
 
-1. Add PDFs, images, or text files to `../../RAGDatabase/documents/`
+1. Add PDFs, images, or text files to `../RAGDatabase/documents/`
 2. Ingest into Chroma:
 
 ```powershell
@@ -29,7 +29,7 @@ uv run ingest-rag
 3. Check status: `GET http://127.0.0.1:8000/rag/status`
 4. Chat answers use retrieved context automatically via `POST /chatbot/`
 
-See `../../RAGDatabase/README.md` for full details.
+See the main [README](../README.md#rag--ingest--search) for full details.
 
 ## Visitor verification (5 free messages)
 

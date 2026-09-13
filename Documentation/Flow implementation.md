@@ -278,7 +278,7 @@ Every successful chat **appends** to the same file, so the bot retains context a
 
 ## LLM Configuration — `utility/llm_models/openai_models.py`
 
-- Loads environment variables from repo root `.env` (`langGraph/.env`).
+- Loads environment variables from repo root `.env` (`personalChatBot/.env`).
 - Requires `OPENAI_API_KEY` in `.env`.
 - Model: **`gpt-4o-mini`**, temperature: **0.5**
 - Uses `langchain_openai.ChatOpenAI` (LangChain-compatible runnable for `prompt | llm`).
@@ -384,7 +384,7 @@ HTTP Response
 |-------|-------|-----|
 | `ModuleNotFoundError: streamingbackend` | Running bare `uvicorn` with global Python | Use `uv run serve` |
 | `"message": null` | Invalid LangGraph state schema (fixed) | Ensure `StateGraph(ChatbotState)` is used |
-| LLM auth error | Missing `OPENAI_API_KEY` | Add key to `langGraph/.env` |
+| LLM auth error | Missing `OPENAI_API_KEY` | Add key to `personalChatBot/.env` |
 | Bot forgets context | Empty or corrupt memory file | Check `chatbotMemory.txt` JSON format |
 
 ---
