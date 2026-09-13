@@ -104,6 +104,31 @@ def submit_lead(
     }
 
 
+def resend_otp(session_id: str | None) -> dict:
+    state = load_auth_state(session_id)
+    lead = state.get("lead")
+
+    if not lead:
+        raise ValueError("Submit your details first to receive an OTP.")
+
+    otp = generate_otp()
+    state["otp_hash"] = hash_otp(otp)
+    state["otp_expires_at"] = (
+        _utc_now() + timedelta(minutes=OTP_EXPIRY_MINUTES)
+    ).isoformat()
+    save_auth_state(session_id, state)
+
+    try:
+        send_otp_email(lead["email"], lead["name"], otp)
+    except EmailDeliveryError as error:
+        raise ValueError(str(error)) from error
+
+    return {
+        "message": "A new verification code has been sent to your email.",
+        "access": build_access_status(session_id),
+    }
+
+
 def verify_otp(session_id: str | None, otp: str) -> dict:
     cleaned_otp = otp.strip()
     if not cleaned_otp:

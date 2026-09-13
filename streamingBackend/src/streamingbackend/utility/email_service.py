@@ -30,12 +30,21 @@ def _send_email(subject: str, to_email: str, body: str) -> None:
     message["To"] = to_email
     message.set_content(body)
 
-    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
-        if SMTP_USE_TLS:
-            server.starttls()
-        if SMTP_USER and SMTP_PASSWORD:
-            server.login(SMTP_USER, SMTP_PASSWORD)
-        server.send_message(message)
+    try:
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=20) as server:
+            if SMTP_USE_TLS:
+                server.starttls()
+            if SMTP_USER and SMTP_PASSWORD:
+                server.login(SMTP_USER, SMTP_PASSWORD)
+            server.send_message(message)
+    except smtplib.SMTPAuthenticationError:
+        raise EmailDeliveryError(
+            "SMTP login failed. For Gmail, use an App Password instead of your normal password."
+        ) from None
+    except smtplib.SMTPException as error:
+        raise EmailDeliveryError(f"Could not send email: {error}") from error
+    except OSError as error:
+        raise EmailDeliveryError(f"Could not reach the email server: {error}") from error
 
 
 def send_otp_email(to_email: str, name: str, otp: str) -> None:

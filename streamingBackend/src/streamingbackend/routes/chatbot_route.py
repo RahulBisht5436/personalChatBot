@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 from streamingbackend.services.chatbot_service import chatbotService, getChatHistory
 from streamingbackend.services.visitor_auth_service import (
     build_access_status,
+    resend_otp,
     submit_lead,
     verify_otp,
 )
@@ -25,6 +26,10 @@ class LeadRequest(BaseModel):
 class VerifyOtpRequest(BaseModel):
     session_id: str | None = None
     otp: str = Field(min_length=4, max_length=8)
+
+
+class ResendOtpRequest(BaseModel):
+    session_id: str | None = None
 
 
 @chatbot_router.get("/health")
@@ -64,6 +69,15 @@ async def lead(request: LeadRequest):
 async def verify(request: VerifyOtpRequest):
     try:
         result = verify_otp(session_id=request.session_id, otp=request.otp)
+        return result
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
+@chatbot_router.post("/resend-otp")
+async def resend(request: ResendOtpRequest):
+    try:
+        result = resend_otp(session_id=request.session_id)
         return result
     except ValueError as error:
         raise HTTPException(status_code=400, detail=str(error)) from error

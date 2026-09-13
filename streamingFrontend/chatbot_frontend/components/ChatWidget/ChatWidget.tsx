@@ -7,15 +7,33 @@ import {
   fetchAccessStatus,
   fetchChatHistory,
   getDefaultApiUrl,
+  resendOtp,
   sendChatMessage,
+  submitLead,
+  verifyOtp,
 } from "@/lib/chatbot-api";
 import { getSessionId } from "@/lib/session";
 import type { AccessStatus, ChatMessage } from "@/lib/types";
+import {
+  applyVerificationInput,
+  getAssistantVerificationReply,
+  getNextVerificationStep,
+  getVerificationPlaceholder,
+  type PendingLead,
+  type VerificationStep,
+  validateVerificationInput,
+} from "@/lib/verification-flow";
 import { widgetConfig } from "@/lib/widget-config";
 import StarlightBackground from "./StarlightBackground";
 import { MessageContent } from "./MessageContent";
-import VerificationGate from "./VerificationGate";
 import "./chat-widget.css";
+
+const EMPTY_LEAD: PendingLead = {
+  name: "",
+  email: "",
+  company: "",
+  designation: "",
+};
 
 type ChatWidgetProps = {
   apiUrl?: string;
@@ -121,11 +139,10 @@ function ChatPanel({
   error,
   input,
   access,
-  apiUrl,
-  sessionId,
-  onAccessChange,
+  verificationStep,
   onInputChange,
   onSend,
+  onResendOtp,
   onClose,
   onPromptClick,
   messagesEndRef,
@@ -136,18 +153,20 @@ function ChatPanel({
   error: string | null;
   input: string;
   access: AccessStatus | null;
-  apiUrl: string;
-  sessionId: string;
-  onAccessChange: (access: AccessStatus) => void;
+  verificationStep: VerificationStep;
   onInputChange: (value: string) => void;
   onSend: (event: React.FormEvent) => void;
+  onResendOtp: () => void;
   onClose: () => void;
   onPromptClick: (prompt: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }) {
-  const requiresVerification =
-    access?.requires_verification === true && access.verified === false;
-  const canChat = access?.can_chat === true;
+  const inVerificationFlow =
+    verificationStep !== "none" && access?.verified === false;
+  const canChat = access?.can_chat === true || inVerificationFlow;
+  const awaitingOtp =
+    verificationStep === "otp" ||
+    (access?.lead_submitted === true && access?.verified === false);
   return (
     <div
       className={`chatbot-panel relative ${embedded ? "" : ""}`}
@@ -229,15 +248,6 @@ function ChatPanel({
           </div>
         )}
 
-        {requiresVerification && access && (
-          <VerificationGate
-            apiUrl={apiUrl}
-            sessionId={sessionId}
-            access={access}
-            onVerified={onAccessChange}
-          />
-        )}
-
         {messages.map((message, index) => {
           const isUser = message.role === "human";
           return (
@@ -270,23 +280,40 @@ function ChatPanel({
         onSubmit={onSend}
         className="relative z-10 shrink-0 border-t border-amber-200/20 bg-[#0c0c14]/95 p-3"
       >
-        {!requiresVerification && access && !access.verified && (
+        {!inVerificationFlow && access && !access.verified && (
           <p className="mb-2 text-xs font-medium text-amber-100/80">
             {access.remaining_free_messages ?? 0} free messages left before email
             verification.
           </p>
+        )}
+        {awaitingOtp && (
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-xs font-medium text-amber-100/80">
+              Enter the verification code from your email to continue.
+            </p>
+            <button
+              type="button"
+              onClick={onResendOtp}
+              disabled={isLoading}
+              className="shrink-0 rounded-full border border-amber-200/35 px-3 py-1 text-xs font-semibold text-amber-50 transition hover:border-amber-200/55 hover:bg-[#252535] disabled:opacity-50"
+            >
+              Resend email
+            </button>
+          </div>
         )}
         <div className="flex items-center gap-2">
           <input
             value={input}
             onChange={(event) => onInputChange(event.target.value)}
             placeholder={
-              canChat
-                ? widgetConfig.placeholder
-                : "Verify your email to continue chatting"
+              inVerificationFlow
+                ? getVerificationPlaceholder(verificationStep)
+                : widgetConfig.placeholder
             }
             className="chatbot-input flex-1 rounded-full border border-zinc-500/40 bg-[#1a1a24] px-4 py-2.5 text-[15px] font-medium text-white outline-none placeholder:text-zinc-300 focus:border-amber-300/50 focus:bg-[#22222e]"
             disabled={isLoading || !canChat}
+            inputMode={verificationStep === "otp" ? "numeric" : undefined}
+            maxLength={verificationStep === "otp" ? 6 : undefined}
           />
           <button
             type="submit"
@@ -321,8 +348,12 @@ export default function ChatWidget({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
+  const [verificationStep, setVerificationStep] =
+    useState<VerificationStep>("none");
+  const [pendingLead, setPendingLead] = useState<PendingLead>(EMPTY_LEAD);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
+  const verificationPromptedRef = useRef(false);
 
   function ensureSessionId(): string {
     if (!sessionIdRef.current) {
@@ -400,6 +431,41 @@ export default function ChatWidget({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
+  function appendAssistantMessage(content: string) {
+    setMessages((current) => [...current, { role: "ai", content }]);
+  }
+
+  function beginVerificationFlow(nextAccess: AccessStatus) {
+    if (nextAccess.verified) {
+      setVerificationStep("none");
+      verificationPromptedRef.current = false;
+      return;
+    }
+
+    if (nextAccess.lead_submitted) {
+      setVerificationStep("otp");
+      if (!verificationPromptedRef.current) {
+        verificationPromptedRef.current = true;
+        appendAssistantMessage(
+          "Please enter the 6-digit verification code we sent to your email.",
+        );
+      }
+      return;
+    }
+
+    if (nextAccess.requires_verification && !verificationPromptedRef.current) {
+      verificationPromptedRef.current = true;
+      setVerificationStep("name");
+      appendAssistantMessage(
+        getAssistantVerificationReply(
+          "name",
+          pendingLead,
+          nextAccess.free_limit,
+        ) ?? "What's your name?",
+      );
+    }
+  }
+
   useEffect(() => {
     if (!isPanelMounted || embedded) {
       return;
@@ -436,8 +502,10 @@ export default function ChatWidget({
           fetchAccessStatus(resolvedApiUrl, sessionId),
         ]);
         if (!cancelled) {
+          const loadedAccess = historyResult.access ?? accessStatus;
           setMessages(historyResult.chatHistory);
-          setAccess(historyResult.access ?? accessStatus);
+          setAccess(loadedAccess);
+          beginVerificationFlow(loadedAccess);
           setHasLoadedHistory(true);
         }
       } catch {
@@ -458,9 +526,134 @@ export default function ChatWidget({
     };
   }, [embedded, hasLoadedHistory, isPanelMounted, resolvedApiUrl]);
 
+  async function handleVerificationMessage(message: string) {
+    const sessionId = ensureSessionId();
+    const trimmed = message.trim();
+    const validationError = validateVerificationInput(
+      verificationStep === "otp" ? "otp" : verificationStep,
+      trimmed,
+    );
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setInput("");
+    setError(null);
+    setMessages((current) => [
+      ...current,
+      { role: "human", content: trimmed },
+    ]);
+
+    if (verificationStep === "otp") {
+
+      setIsLoading(true);
+      try {
+        const result = await verifyOtp(resolvedApiUrl, {
+          session_id: sessionId,
+          otp: trimmed,
+        });
+        setAccess(result.access);
+        setVerificationStep("none");
+        verificationPromptedRef.current = false;
+        appendAssistantMessage(
+          "You're verified! Feel free to continue our conversation.",
+        );
+      } catch (verifyError) {
+        setError(
+          verifyError instanceof Error
+            ? verifyError.message
+            : "Could not verify the code.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    const updatedLead = applyVerificationInput(
+      verificationStep,
+      trimmed,
+      pendingLead,
+    );
+    setPendingLead(updatedLead);
+
+    const nextStep = getNextVerificationStep(verificationStep);
+    if (!nextStep) {
+      return;
+    }
+
+    if (nextStep === "otp") {
+      setIsLoading(true);
+      try {
+        const result = await submitLead(resolvedApiUrl, {
+          session_id: sessionId,
+          ...updatedLead,
+        });
+        setAccess(result.access);
+        setVerificationStep("otp");
+        appendAssistantMessage(
+          getAssistantVerificationReply("otp", updatedLead, access?.free_limit ?? 5) ??
+            result.message,
+        );
+      } catch (submitError) {
+        setError(
+          submitError instanceof Error
+            ? submitError.message
+            : "Could not send the verification email.",
+        );
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    setVerificationStep(nextStep);
+    appendAssistantMessage(
+      getAssistantVerificationReply(
+        nextStep,
+        updatedLead,
+        access?.free_limit ?? 5,
+      ) ?? "Please continue.",
+    );
+  }
+
+  async function handleResendOtp() {
+    const sessionId = ensureSessionId();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await resendOtp(resolvedApiUrl, sessionId);
+      setAccess(result.access);
+      setVerificationStep("otp");
+      appendAssistantMessage(
+        "I've sent a new verification code to your email. Please enter it here.",
+      );
+    } catch (resendError) {
+      setError(
+        resendError instanceof Error
+          ? resendError.message
+          : "Could not resend the verification email.",
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   async function sendMessage(message: string) {
     const trimmed = message.trim();
-    if (!trimmed || isLoading || !access?.can_chat) {
+    if (!trimmed || isLoading) {
+      return;
+    }
+
+    if (verificationStep !== "none" && access?.verified === false) {
+      await handleVerificationMessage(trimmed);
+      return;
+    }
+
+    if (!access?.can_chat) {
       return;
     }
 
@@ -483,12 +676,20 @@ export default function ChatWidget({
       setMessages(result.chat_history);
       if (result.access) {
         setAccess(result.access);
+        if (
+          result.access.requires_verification &&
+          !result.access.verified &&
+          !result.access.lead_submitted
+        ) {
+          beginVerificationFlow(result.access);
+        }
       }
       setHasLoadedHistory(true);
     } catch (sendError) {
       const accessError = sendError as Error & { access?: AccessStatus };
       if (accessError.access) {
         setAccess(accessError.access);
+        beginVerificationFlow(accessError.access);
       }
       setError(
         accessError.message || "Failed to send message. Is the backend running?",
@@ -511,11 +712,10 @@ export default function ChatWidget({
     error,
     input,
     access,
-    apiUrl: resolvedApiUrl,
-    sessionId: ensureSessionId(),
-    onAccessChange: setAccess,
+    verificationStep,
     onInputChange: setInput,
     onSend: handleSend,
+    onResendOtp: () => void handleResendOtp(),
     onClose: closeChat,
     onPromptClick: (prompt: string) => void sendMessage(prompt),
     messagesEndRef,

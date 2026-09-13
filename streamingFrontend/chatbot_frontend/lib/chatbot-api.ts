@@ -107,6 +107,31 @@ export async function submitLead(
   return data as LeadResponse;
 }
 
+export async function resendOtp(
+  apiUrl: string,
+  sessionId: string,
+): Promise<LeadResponse> {
+  const response = await fetch(`${apiUrl}/chatbot/resend-otp`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ session_id: sessionId }),
+  });
+
+  const data = (await response.json()) as LeadResponse | { detail?: string };
+
+  if (!response.ok) {
+    throw new Error(
+      typeof (data as { detail?: string }).detail === "string"
+        ? (data as { detail: string }).detail
+        : "Failed to resend verification email",
+    );
+  }
+
+  return data as LeadResponse;
+}
+
 export async function verifyOtp(
   apiUrl: string,
   payload: VerifyOtpRequest,
