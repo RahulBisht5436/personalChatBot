@@ -1,3 +1,7 @@
+
+# Preview Chatbot
+<img width="1732" height="871" alt="image" src="https://github.com/user-attachments/assets/a8cf7793-488b-424b-b206-11f4b8ea954e" />
+
 # Personal Chatbot
 
 An AI portfolio assistant with a **LangGraph + FastAPI** backend, **Next.js** embeddable widget, **RAG** over your career documents, and **email OTP verification** for visitors.
