@@ -1,25 +1,14 @@
-from langgraph.graph import END, START, StateGraph
+from langsmith import traceable
 
 from streamingbackend.database.memory_store import load_chat_history, save_chat_history
-from streamingbackend.services.chatbot_node import chatbotInteractionNode
-from streamingbackend.services.retrieve_node import retrieveContextNode
-from streamingbackend.services.state import ChatbotState
+from streamingbackend.graph import graph as compiled_graph
 from streamingbackend.services.visitor_auth_service import (
-    build_access_status,
     ensure_can_chat,
     register_chat_message,
 )
 
-graph = StateGraph(ChatbotState)
-graph.add_node("retrieve_context", retrieveContextNode)
-graph.add_node("chatbot_interaction", chatbotInteractionNode)
-graph.add_edge(START, "retrieve_context")
-graph.add_edge("retrieve_context", "chatbot_interaction")
-graph.add_edge("chatbot_interaction", END)
 
-compiled_graph = graph.compile()
-
-
+@traceable(name="retrieve_context_node" ,run_type="tool")
 def _serialize_history(chat_history: list) -> list[dict[str, str]]:
     return [
         {"role": message.type, "content": message.content}
@@ -27,6 +16,7 @@ def _serialize_history(chat_history: list) -> list[dict[str, str]]:
     ]
 
 
+@traceable(name="retrieve_context_node" ,run_type="tool")
 def chatbotService(user_message: str, session_id: str | None = None) -> dict:
     ensure_can_chat(session_id)
     chat_history = load_chat_history(session_id)
@@ -50,6 +40,7 @@ def chatbotService(user_message: str, session_id: str | None = None) -> dict:
     }
 
 
+@traceable(name="retrieve_context_node" ,run_type="tool")
 def getChatHistory(session_id: str | None = None) -> list[dict[str, str]]:
     chat_history = load_chat_history(session_id)
     return _serialize_history(chat_history)

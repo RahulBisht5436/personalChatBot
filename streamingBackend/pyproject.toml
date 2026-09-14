@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Rahul Bisht" }
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.141.1",
     "langgraph>=1.2.11",
@@ -18,10 +18,12 @@ dependencies = [
     "pymupdf>=1.25.0",
     "chromadb>=0.6.0",
     "python-dotenv>=1.0.0",
+    "langgraph-cli[inmem]>=0.4.31",
 ]
 
 [project.scripts]
 serve = "streamingbackend.cli:serve"
+langgraph-dev = "streamingbackend.cli:langgraph_dev"
 ingest-rag = "streamingbackend.cli:ingest_rag"
 
 [build-system]

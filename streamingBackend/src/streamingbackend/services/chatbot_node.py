@@ -1,6 +1,6 @@
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.prompts import PromptTemplate
-
+from langsmith import traceable
 from streamingbackend.services.state import ChatbotState
 from streamingbackend.utility.llm_models.openai_models import llm
 from streamingbackend.utility.portfolio_context import BASE_ASSISTANT_INSTRUCTIONS
@@ -22,6 +22,7 @@ Reply as Rahul AI:
 chain = prompt | llm
 
 
+@traceable(name="retrieve_context_node" ,run_type="tool")
 def _format_chat_history(chat_history: list) -> str:
     lines: list[str] = []
     for message in chat_history:
@@ -33,6 +34,7 @@ def _format_chat_history(chat_history: list) -> str:
     return "\n".join(lines) if lines else "No previous messages."
 
 
+@traceable(name="retrieve_context_node" ,run_type="tool")
 def chatbotInteractionNode(state: ChatbotState) -> dict:
     user_message = state["user_message"]
     chat_history = list(state.get("chat_history", []))

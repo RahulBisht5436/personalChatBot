@@ -11,6 +11,18 @@ uv run serve
 
 Do **not** run bare `uvicorn` — it uses global Python and will fail with `ModuleNotFoundError`.
 
+## LangGraph CLI (Studio / graph debugging)
+
+This project already includes LangGraph CLI — no `langgraph new` needed.
+
+```powershell
+uv run langgraph-dev
+```
+
+Opens the dev server on **http://127.0.0.1:2024** and LangGraph Studio for visual graph testing.
+
+See [Documentation/LangGraph-CLI.md](../Documentation/LangGraph-CLI.md) for full setup.
+
 Alternative:
 
 ```powershell
