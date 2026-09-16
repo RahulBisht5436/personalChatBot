@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
+import logfire
 
 from streamingbackend.services.chatbot_service import chatbotService, getChatHistory
 from streamingbackend.services.visitor_auth_service import (
@@ -88,20 +89,21 @@ async def chat(request: Request):
     request_data = await request.json()
     user_message = request_data.get("user_message", "")
     session_id = request_data.get("session_id")
+    with logfire.span("chatbot_service with route /chat"):
+        logfire.info(f"User message: {user_message} and session_id: {session_id} bbbbbb")
+        try:
+            result = chatbotService(user_message=user_message, session_id=session_id)
+        except PermissionError as error:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "message": str(error),
+                    "access": build_access_status(session_id),
+                },
+            ) from error
 
-    try:
-        result = chatbotService(user_message=user_message, session_id=session_id)
-    except PermissionError as error:
-        raise HTTPException(
-            status_code=403,
-            detail={
-                "message": str(error),
-                "access": build_access_status(session_id),
-            },
-        ) from error
-
-    return {
-        "message": result["response"],
-        "chat_history": result["chat_history"],
-        "access": result["access"],
-    }
+        return {
+            "message": result["response"],
+            "chat_history": result["chat_history"],
+            "access": result["access"],
+        }

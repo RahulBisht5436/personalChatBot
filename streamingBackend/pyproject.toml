@@ -18,6 +18,7 @@ dependencies = [
     "pymupdf>=1.25.0",
     "chromadb>=0.6.0",
     "python-dotenv>=1.0.0",
+    "logfire[fastapi,httpx]>=5.1.0",
 ]
 
 [project.scripts]

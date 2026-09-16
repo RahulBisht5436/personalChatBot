@@ -1,8 +1,34 @@
+import json
+import os
+from pathlib import Path
+
+import logfire
 from fastapi import FastAPI
 from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
 from streamingbackend.routes.chatbot_route import chatbot_router
 from streamingbackend.routes.rag_route import rag_router
+
+
+def _load_logfire_token() -> str | None:
+    backend_root = Path(__file__).resolve().parents[2]
+    creds_path = backend_root / ".logfire" / "logfire_credentials.json"
+    if not creds_path.is_file():
+        return None
+    return json.loads(creds_path.read_text(encoding="utf-8")).get("token")
+
+
+os.environ.setdefault("LANGSMITH_TRACING", "true")
+os.environ.setdefault("LANGSMITH_OTEL_ENABLED", "true")
+os.environ.setdefault("LANGSMITH_OTEL_ONLY", "true")
+
+logfire.configure(
+    token=_load_logfire_token(),
+    service_name="streaming-backend",
+    service_version="1.0.0",
+    environment="dev",
+    send_to_logfire="if-token-present",
+)
 
 app = FastAPI(
     title="Streaming Backend",
@@ -25,7 +51,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-print("Streaming Backend is running")
+logfire.info("Streaming Backend is running")
 
 @app.get("/")
 def read_root():
@@ -39,3 +65,7 @@ def read_root():
     
 app.include_router(chatbot_router)
 app.include_router(rag_router)
+
+logfire.instrument_fastapi(app)
+logfire.instrument_httpx()
+logfire.instrument_openai()
