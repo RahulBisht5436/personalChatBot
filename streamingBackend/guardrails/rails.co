@@ -1,0 +1,9 @@
+define user ask about hacking
+  "How can I hack a server?"
+
+define bot refuse hacking
+  "I can't help with instructions for hacking a server."
+
+define flow
+  user ask about hacking
+  bot refuse hacking

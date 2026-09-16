@@ -1,0 +1,19 @@
+services:
+
+  streaming-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: streaming-backend
+
+    ports:
+      - "8000:8000"
+
+    env_file:
+      - ../.env
+
+    volumes:
+      - ./guardrails:/app/guardRails
+
+    restart: unless-stopped

@@ -19,6 +19,7 @@ dependencies = [
     "chromadb>=0.6.0",
     "python-dotenv>=1.0.0",
     "logfire[fastapi,httpx]>=5.1.0",
+    "nemoguardrails>=0.24.1",
 ]
 
 [project.scripts]
