@@ -37,17 +37,22 @@ def chatbotService(user_message: str, session_id: str | None = None) -> dict:
             "chat_history": chat_history,
             "retrieved_context": None,
             "response": None,
+            "session_id": session_id,
+            "ui_event": None,
         }
     )
 
     save_chat_history(result["chat_history"], session_id)
     access = register_chat_message(session_id)
 
-    return {
+    response_payload: dict = {
         "response": result["response"] or "",
         "chat_history": _serialize_history(result["chat_history"]),
         "access": access,
     }
+    if result.get("ui_event"):
+        response_payload["ui_event"] = result["ui_event"]
+    return response_payload
 
 
 def getChatHistory(session_id: str | None = None) -> list[dict[str, str]]:

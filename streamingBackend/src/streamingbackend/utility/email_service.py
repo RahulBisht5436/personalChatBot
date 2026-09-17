@@ -18,7 +18,12 @@ class EmailDeliveryError(Exception):
     pass
 
 
-def _send_email(subject: str, to_email: str, body: str) -> None:
+def _send_email(
+    subject: str,
+    to_email: str,
+    body: str,
+    reply_to: str | None = None,
+) -> None:
     if not SMTP_HOST or not SMTP_FROM:
         raise EmailDeliveryError(
             "Email is not configured. Set SMTP_HOST, SMTP_FROM, and related SMTP env vars."
@@ -28,6 +33,8 @@ def _send_email(subject: str, to_email: str, body: str) -> None:
     message["Subject"] = subject
     message["From"] = SMTP_FROM
     message["To"] = to_email
+    if reply_to:
+        message["Reply-To"] = reply_to
     message.set_content(body)
 
     try:
@@ -70,6 +77,33 @@ def send_lead_notification(lead: dict) -> None:
         f"Session ID: {lead.get('session_id', 'unknown')}\n"
     )
     _send_email(subject, LEAD_NOTIFICATION_EMAIL, body)
+
+
+def send_hiring_interest_email(
+    *,
+    visitor_name: str,
+    visitor_email: str,
+    visitor_company: str,
+    job_profile: str,
+    candidate_message: str,
+    session_id: str,
+) -> None:
+    subject = f"Hiring interest from {visitor_name}: {job_profile}"
+    body = (
+        "A visitor expressed hiring interest via the Rahul AI chatbot.\n\n"
+        f"Name: {visitor_name}\n"
+        f"Email: {visitor_email}\n"
+        f"Company: {visitor_company}\n"
+        f"Job profile: {job_profile}\n\n"
+        f"Message for Rahul:\n{candidate_message}\n\n"
+        f"Session ID: {session_id}\n"
+    )
+    _send_email(
+        subject,
+        LEAD_NOTIFICATION_EMAIL,
+        body,
+        reply_to=visitor_email,
+    )
 
 
 def hash_otp(otp: str) -> str:

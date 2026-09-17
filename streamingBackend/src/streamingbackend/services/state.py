@@ -6,3 +6,5 @@ class ChatbotState(TypedDict):
     chat_history: list
     retrieved_context: str | None
     response: str | None
+    session_id: str | None
+    ui_event: dict | None

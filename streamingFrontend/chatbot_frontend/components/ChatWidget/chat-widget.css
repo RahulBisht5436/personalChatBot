@@ -263,6 +263,20 @@
   transform: scale(1.06);
 }
 
+.chatbot-launcher--happy {
+  animation: chatbot-launcher-pulse 2s ease-in-out infinite;
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(74, 222, 128, 0.25);
+}
+
+.chatbot-greeting--happy {
+  border-color: rgba(74, 222, 128, 0.35) !important;
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    0 0 20px rgba(74, 222, 128, 0.15);
+}
+
 .chatbot-launcher-ring {
   position: absolute;
   inset: -3px;

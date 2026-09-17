@@ -2,6 +2,8 @@ export const widgetConfig = {
   assistantName: "Rahul AI",
   ownerName: "Rahul Bisht",
   greeting: "Hi! Chat with Rahul AI",
+  greetingSent: "Message sent to Rahul 😊",
+  greetingSentSubtext: "He'll get back to you as soon as possible!",
   subtitle: "Portfolio Assistant",
   welcomeTitle: "Ask me about Rahul",
   welcomeText:
@@ -11,7 +13,7 @@ export const widgetConfig = {
     "What have you studied?",
     "Tell me about your B.Tech background",
     "What skills do you have?",
-    "What projects have you built?",
+    "I'd like to hire Rahul",
   ],
   highlightStats: [
     { label: "B.Tech", detail: "Computer Science" },

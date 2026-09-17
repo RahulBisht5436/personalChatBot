@@ -13,7 +13,7 @@ import {
   verifyOtp,
 } from "@/lib/chatbot-api";
 import { getSessionId } from "@/lib/session";
-import type { AccessStatus, ChatMessage } from "@/lib/types";
+import type { AccessStatus, ChatMessage, UiEvent } from "@/lib/types";
 import {
   applyVerificationInput,
   getAssistantVerificationReply,
@@ -351,6 +351,7 @@ export default function ChatWidget({
   const [verificationStep, setVerificationStep] =
     useState<VerificationStep>("none");
   const [pendingLead, setPendingLead] = useState<PendingLead>(EMPTY_LEAD);
+  const [launcherMood, setLauncherMood] = useState<"default" | "happy">("default");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
   const verificationPromptedRef = useRef(false);
@@ -435,6 +436,13 @@ export default function ChatWidget({
     setMessages((current) => [...current, { role: "ai", content }]);
   }
 
+  function applyUiEvent(uiEvent: UiEvent | undefined) {
+    if (uiEvent?.type === "hiring_interest_sent") {
+      setLauncherMood("happy");
+      setShowGreeting(true);
+    }
+  }
+
   function beginVerificationFlow(nextAccess: AccessStatus) {
     if (nextAccess.verified) {
       setVerificationStep("none");
@@ -505,6 +513,9 @@ export default function ChatWidget({
           const loadedAccess = historyResult.access ?? accessStatus;
           setMessages(historyResult.chatHistory);
           setAccess(loadedAccess);
+          if (loadedAccess.hiring_interest_sent) {
+            setLauncherMood("happy");
+          }
           beginVerificationFlow(loadedAccess);
           setHasLoadedHistory(true);
         }
@@ -674,6 +685,7 @@ export default function ChatWidget({
         trimmed,
       );
       setMessages(result.chat_history);
+      applyUiEvent(result.ui_event);
       if (result.access) {
         setAccess(result.access);
         if (
@@ -794,7 +806,7 @@ export default function ChatWidget({
           <button
             type="button"
             onClick={openChat}
-            className="chatbot-greeting"
+            className={`chatbot-greeting ${launcherMood === "happy" ? "chatbot-greeting--happy" : ""}`}
             style={{
               maxWidth: 240,
               borderRadius: 16,
@@ -826,7 +838,9 @@ export default function ChatWidget({
                 position: "relative",
               }}
             >
-              {widgetConfig.greeting}
+              {launcherMood === "happy"
+                ? widgetConfig.greetingSent
+                : widgetConfig.greeting}
             </p>
             <p
               style={{
@@ -837,7 +851,9 @@ export default function ChatWidget({
                 position: "relative",
               }}
             >
-              Ask about my education, skills, and projects.
+              {launcherMood === "happy"
+                ? widgetConfig.greetingSentSubtext
+                : "Ask about my education, skills, and projects."}
             </p>
           </button>
         )}
@@ -849,13 +865,20 @@ export default function ChatWidget({
             onClick={toggleChat}
             aria-label={isPanelMounted ? "Close chat widget" : "Open chat widget"}
             aria-expanded={isPanelMounted}
-            className={!isPanelMounted ? "chatbot-launcher" : ""}
+            className={
+              !isPanelMounted
+                ? `chatbot-launcher ${launcherMood === "happy" ? "chatbot-launcher--happy" : ""}`
+                : ""
+            }
             style={{
               position: "relative",
               width: LAUNCHER_SIZE,
               height: LAUNCHER_SIZE,
               borderRadius: "50%",
-              border: "1px solid rgba(212, 175, 55, 0.35)",
+              border:
+                launcherMood === "happy"
+                  ? "1px solid rgba(74, 222, 128, 0.45)"
+                  : "1px solid rgba(212, 175, 55, 0.35)",
               background:
                 "radial-gradient(circle at 30% 20%, rgba(255,248,231,0.25), transparent 45%), linear-gradient(145deg, #1a1a24, #050508)",
               color: "#f5e6b8",

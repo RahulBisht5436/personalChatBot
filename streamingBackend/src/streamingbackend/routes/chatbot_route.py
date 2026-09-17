@@ -100,8 +100,11 @@ async def chat(request: Request):
             },
         ) from error
 
-    return {
+    response = {
         "message": result["response"],
         "chat_history": result["chat_history"],
         "access": result["access"],
     }
+    if result.get("ui_event"):
+        response["ui_event"] = result["ui_event"]
+    return response

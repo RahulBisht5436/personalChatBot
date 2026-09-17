@@ -31,6 +31,7 @@ def _default_auth_state() -> dict:
         "otp_expires_at": None,
         "lead_submitted_at": None,
         "verified_at": None,
+        "hiring_interest_sent_at": None,
     }
 
 

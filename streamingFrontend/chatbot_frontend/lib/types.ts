@@ -10,13 +10,20 @@ export type AccessStatus = {
   requires_verification: boolean;
   can_chat: boolean;
   lead_submitted: boolean;
+  hiring_interest_sent?: boolean;
   remaining_free_messages: number | null;
+};
+
+export type UiEvent = {
+  type: "hiring_interest_sent";
+  launcher_mood: "happy";
 };
 
 export type ChatResponse = {
   message: string;
   chat_history: ChatMessage[];
   access?: AccessStatus;
+  ui_event?: UiEvent;
 };
 
 export type ChatHistoryResponse = {
