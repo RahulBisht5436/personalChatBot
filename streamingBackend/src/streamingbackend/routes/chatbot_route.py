@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 import logfire
+import asyncio
 
 from streamingbackend.services.chatbot_service import chatbotService, getChatHistory
 from streamingbackend.services.visitor_auth_service import (
@@ -92,7 +93,11 @@ async def chat(request: Request):
     with logfire.span("chatbot_service with route /chat"):
         logfire.info(f"User message: {user_message} and session_id: {session_id} bbbbbb")
         try:
-            result = chatbotService(user_message=user_message, session_id=session_id)
+            result = await asyncio.to_thread(
+                chatbotService,
+                user_message=user_message,
+                session_id=session_id,
+            )
         except PermissionError as error:
             raise HTTPException(
                 status_code=403,

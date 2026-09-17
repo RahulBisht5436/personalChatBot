@@ -1,11 +1,17 @@
 import json
 import os
+from datetime import datetime
 from pathlib import Path
 
+from dotenv import load_dotenv
 import logfire
 from fastapi import FastAPI
-from datetime import datetime
 from fastapi.middleware.cors import CORSMiddleware
+
+from streamingbackend.rag.config import get_repo_root
+
+load_dotenv(get_repo_root() / ".env")
+
 from streamingbackend.routes.chatbot_route import chatbot_router
 from streamingbackend.routes.rag_route import rag_router
 

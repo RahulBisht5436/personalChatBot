@@ -1,0 +1,21 @@
+models:
+  - type: main
+    engine: openai
+    model: gpt-4o-mini
+
+  - type: self_check_input
+    engine: openai
+    model: gpt-4o-mini
+
+  - type: self_check_output
+    engine: openai
+    model: gpt-4o-mini
+
+rails:
+  input:
+    flows:
+      - self check input
+
+  output:
+    flows:
+      - self check output

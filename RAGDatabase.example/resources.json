@@ -21,5 +21,11 @@
       "url": "https://www.linkedin.com/in/your-profile",
       "keywords": ["linkedin", "profile"]
     }
-  ]
+  ],
+  "contact": {
+    "email": "your-public-email@example.com",
+    "phone": "your-phone-number",
+    "linkedin": "https://www.linkedin.com/in/your-profile",
+    "github": "https://github.com/your-username"
+  }
 }

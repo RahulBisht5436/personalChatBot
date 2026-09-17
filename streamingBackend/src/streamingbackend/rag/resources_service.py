@@ -4,6 +4,10 @@ from pathlib import Path
 from urllib.parse import quote
 
 from streamingbackend.rag.config import get_rag_database_path
+from streamingbackend.utility.portfolio_context import (
+    build_public_contact_lines,
+    is_contact_query,
+)
 
 
 def get_resources_path() -> Path:
@@ -17,7 +21,7 @@ def get_api_base_url() -> str:
 def _load_resources() -> dict:
     resources_path = get_resources_path()
     if not resources_path.exists():
-        return {"downloads": [], "projects": [], "profiles": []}
+        return {"downloads": [], "projects": [], "profiles": [], "contact": {}}
     return json.loads(resources_path.read_text(encoding="utf-8"))
 
 
@@ -105,6 +109,46 @@ def format_resource_context(query: str) -> str:
         )
 
     return "\n\n".join(sections)
+
+
+def _build_contact_lines(contact: dict) -> list[str]:
+    lines: list[str] = []
+
+    email = str(contact.get("email", "")).strip()
+    phone = str(contact.get("phone", "")).strip()
+    linkedin = str(contact.get("linkedin", "")).strip()
+    github = str(contact.get("github", "")).strip()
+
+    if email:
+        lines.append(f"- Email: {email}")
+    if phone:
+        lines.append(f"- Phone: {phone}")
+    if linkedin:
+        lines.append(f"- LinkedIn: {linkedin}")
+    if github:
+        lines.append(f"- GitHub: {github}")
+
+    return lines
+
+
+def format_resource_contact_context(query: str) -> str:
+    resources = _load_resources()
+    contact = resources.get("contact") or {}
+    lines = _build_contact_lines(contact)
+
+    if not lines:
+        lines = build_public_contact_lines()
+
+    if not lines:
+        return ""
+
+    if not is_contact_query(query):
+        return ""
+
+    return (
+        "Public contact details (share these when the visitor asks how to reach Rahul):\n"
+        + "\n".join(lines)
+    )
 
 
 def resolve_document_path(file_name: str) -> Path | None:
