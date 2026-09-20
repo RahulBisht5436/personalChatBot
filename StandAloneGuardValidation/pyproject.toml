@@ -1,0 +1,22 @@
+[project]
+name = "standaloneguardvalidation"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Rahul bisht", email = "rahul.bisht@telgoo5.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "guardrails-ai>=0.11.0",
+    "guardrails-ai-competitor-check>=0.0.2",
+    "en-core-web-trf==3.8.0",
+    "ipykernel>=7.3.0",
+]
+
+[project.scripts]
+standaloneguardvalidation = "standaloneguardvalidation:main"
+
+[build-system]
+requires = ["uv_build>=0.12.6,<0.13.0"]
+build-backend = "uv_build"

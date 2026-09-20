@@ -6,6 +6,11 @@ from langchain_core.messages import (
     ToolMessage,
 )
 
+from streamingbackend.guards.pii_guard import sanitize_assistant_reply
+from streamingbackend.guards.toxic_guard import sanitize_toxic_output ,SAFE_BLOCKED_OUTPUT
+from streamingbackend.guards.toxic_guard import is_toxic_input, SAFE_BLOCKED_INPUT
+
+
 from streamingbackend.services.state import ChatbotState
 from streamingbackend.services.tools.hiring_interest_tool import (
     SEND_HIRING_INTEREST_TOOL_NAME,
@@ -90,3 +95,30 @@ def chatbotInteractionNode(state: ChatbotState) -> dict:
         "chat_history": updated_history,
         "ui_event": ui_event,
     }
+
+def inputGuardNode(state: ChatbotState) -> dict:
+    user_message = state.get("user_message", "")
+    if is_toxic_input(user_message):
+        return {
+            "response": SAFE_BLOCKED_INPUT,
+            "guardrail_blocked": True,
+        }
+    return {}
+
+
+def outputGuardNode(state: ChatbotState) -> dict:
+    response = state.get("response")
+    if not response:
+        return {}
+    # 1) Toxic check on bot output
+    response, toxic_changed = sanitize_toxic_output(response)
+    if not response.strip():
+        response = SAFE_BLOCKED_OUTPUT
+    # 2) PII masking (your existing logic)
+    sanitized = sanitize_assistant_reply(response)
+    if sanitized == state.get("response") and not toxic_changed:
+        return {}
+    chat_history = list(state.get("chat_history", []))
+    if chat_history and getattr(chat_history[-1], "type", None) == "ai":
+        chat_history[-1].content = sanitized
+    return {"response": sanitized, "chat_history": chat_history}

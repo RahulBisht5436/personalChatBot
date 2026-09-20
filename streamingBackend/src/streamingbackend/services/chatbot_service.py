@@ -1,7 +1,8 @@
 from langgraph.graph import END, START, StateGraph
+from streamingbackend.services.chatbot_node import outputGuardNode
 
 from streamingbackend.database.memory_store import load_chat_history, save_chat_history
-from streamingbackend.services.chatbot_node import chatbotInteractionNode
+from streamingbackend.services.chatbot_node import chatbotInteractionNode, inputGuardNode
 from streamingbackend.services.retrieve_node import retrieveContextNode
 from streamingbackend.services.state import ChatbotState
 from streamingbackend.services.visitor_auth_service import (
@@ -13,9 +14,17 @@ from streamingbackend.services.visitor_auth_service import (
 graph = StateGraph(ChatbotState)
 graph.add_node("retrieve_context", retrieveContextNode)
 graph.add_node("chatbot_interaction", chatbotInteractionNode)
-graph.add_edge(START, "retrieve_context")
+graph.add_node("output_guard", outputGuardNode)
+graph.add_node("input_guard", inputGuardNode)
+
+graph.add_edge(START, "input_guard")
+graph.add_conditional_edges(
+    "input_guard",
+    lambda s: END if s.get("guardrail_blocked") else "retrieve_context",
+)
 graph.add_edge("retrieve_context", "chatbot_interaction")
-graph.add_edge("chatbot_interaction", END)
+graph.add_edge("chatbot_interaction", "output_guard")
+graph.add_edge("output_guard", END)
 
 compiled_graph = graph.compile()
 

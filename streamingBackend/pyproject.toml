@@ -19,6 +19,8 @@ dependencies = [
     "chromadb>=0.6.0",
     "python-dotenv>=1.0.0",
     "guardrails-ai>=0.11.0",
+    "guardrails-ai-detect-pii>=0.0.6",
+    "guardrails-ai-toxic-language>=0.0.2",
 ]
 
 [project.scripts]
